@@ -87,10 +87,13 @@ function getRemoteReactionState(gameId) {
 function formatGame(game) {
   const visitor = teamNames[game.visitor_team] || game.visitor_team;
   const home = teamNames[game.home_team] || game.home_team;
+  const startTime = String(game.start_time || "").trim();
+  const cancelled = startTime.toLowerCase() === "cancelled" || startTime === "試合中止";
   return {
     id: game.game_id,
     date: game.game_date,
-    time: game.start_time.slice(0, 5),
+    time: cancelled ? "試合中止" : startTime.slice(0, 5),
+    cancelled,
     visitorCode: game.visitor_team,
     visitor,
     visitorFull: visitor,
@@ -135,6 +138,7 @@ function formatDate(date) {
 async function renderGameList(date) {
   const list = document.querySelector("#game-list");
   if (!list) return;
+  const empty = document.querySelector("#game-empty");
 
   try {
     const games = (await supabaseRequest(`games?select=*&game_date=eq.${date}&order=start_time.asc`)).map(formatGame);
@@ -150,19 +154,29 @@ async function renderGameList(date) {
         </div>
       </a>
     `).join("");
+    empty.textContent = date === todayInJapan()
+      ? "試合開始時刻までお待ちください。"
+      : "試合がありません。";
+    empty.hidden = games.length > 0;
   } catch {
     document.querySelector("#game-count").textContent = "0試合";
+    empty.hidden = true;
   }
 }
 
 function setupDateNavigation() {
   if (!document.querySelector("#game-list")) return;
   const parameter = new URLSearchParams(location.search).get("date");
-  let date = /^\d{4}-\d{2}-\d{2}$/.test(parameter || "") ? parameter : todayInJapan();
+  const today = todayInJapan();
+  const nextButton = document.querySelector("#next-date");
+  const todayButton = document.querySelector("#today-date");
+  let date = /^\d{4}-\d{2}-\d{2}$/.test(parameter || "") ? parameter : today;
 
   function showDate() {
     document.querySelector("#selected-date").dateTime = date;
     document.querySelector("#selected-date").textContent = formatDate(date);
+    nextButton.hidden = date >= today;
+    todayButton.hidden = date === today;
     const url = new URL(location.href);
     url.searchParams.set("date", date);
     history.replaceState(null, "", url);
@@ -171,6 +185,14 @@ function setupDateNavigation() {
 
   document.querySelector("#previous-date").addEventListener("click", () => {
     date = shiftDate(date, -1);
+    showDate();
+  });
+  nextButton.addEventListener("click", () => {
+    if (date < today) date = shiftDate(date, 1);
+    showDate();
+  });
+  todayButton.addEventListener("click", () => {
+    date = today;
     showDate();
   });
   showDate();
@@ -196,7 +218,7 @@ async function renderGamePage() {
   view.classList.add(`visitor-${game.visitorCode}`, `home-${game.homeCode}`);
   document.querySelector("#visitor-name").textContent = game.visitorFull;
   document.querySelector("#home-name").textContent = game.homeFull;
-  document.querySelector("#game-time").textContent = `${game.time}開始`;
+  document.querySelector("#game-time").textContent = game.cancelled ? "試合中止" : `${game.time}開始`;
   const umpire = document.querySelector("#game-umpire");
   umpire.textContent = `球審：${game.umpire || ""}`;
   umpire.hidden = !game.umpire;
@@ -211,9 +233,11 @@ async function renderGamePage() {
 
   function updateAbsAvailability() {
     const ended = game.end === "final";
-    const available = !ended && isAbsAvailable(game);
+    const available = !ended && !game.cancelled && isAbsAvailable(game);
     absButton.disabled = !available;
-    availability.textContent = ended ? "この試合は終了しました。" : "試合開始後よりご利用いただけます。";
+    availability.textContent = game.cancelled
+      ? "この試合は中止になりました。"
+      : ended ? "この試合は終了しました。" : "試合開始後よりご利用いただけます。";
     availability.hidden = available;
   }
 
