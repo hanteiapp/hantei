@@ -8,6 +8,8 @@
   --line: #dfe3e9;
   --paper: #fff;
   --background: #f3f5f8;
+  --visitor-color: #64748b;
+  --home-color: #334155;
 }
 
 * { box-sizing: border-box; }
@@ -133,9 +135,9 @@ h1, h2, p { margin-top: 0; }
 
 .game-card::before {
   position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: var(--blue);
+  inset: 0 0 auto;
+  height: 5px;
+  background: linear-gradient(90deg, var(--visitor-color) 0 50%, var(--home-color) 50%);
   content: "";
 }
 
@@ -148,20 +150,6 @@ h1, h2, p { margin-top: 0; }
 }
 
 .card-time { color: var(--muted); font-size: .72rem; font-weight: 700; }
-
-.status {
-  display: inline-block;
-  margin: 0;
-  padding: 3px 7px;
-  color: var(--blue);
-  background: #eaf0f8;
-  border-radius: 3px;
-  font-size: .64rem;
-  font-weight: 800;
-}
-
-.status.live { color: #b31d27; background: #ffeaec; }
-.status.finished { color: #586171; background: #eceef1; }
 
 .teams { display: grid; gap: 6px; }
 
@@ -180,19 +168,52 @@ h1, h2, p { margin-top: 0; }
 }
 
 .match-card {
+  position: relative;
   padding: 22px 18px 20px;
+  overflow: hidden;
   color: white;
-  background: var(--navy);
+  background: linear-gradient(110deg, var(--visitor-color) 0 49%, var(--home-color) 51% 100%);
   border-radius: 8px;
 }
 
-.match-card .status { margin-bottom: 18px; color: white; background: rgba(255,255,255,.14); }
-.match-card .status.live { background: var(--red); }
+.match-card::before {
+  position: absolute;
+  inset: 0;
+  background: rgba(7, 19, 40, .52);
+  content: "";
+}
+
+.match-card > * { position: relative; }
 
 .matchup { display: grid; gap: 6px; }
 .matchup strong { font-size: clamp(1.12rem, 5.5vw, 1.55rem); line-height: 1.3; }
 .matchup span { color: #9ba8bb; font-size: .72rem; font-weight: 800; }
 .match-time { margin: 16px 0 0; color: #c5ccda; font-size: .78rem; }
+
+.visitor-tigers { --visitor-color: #ffe100; }
+.home-tigers { --home-color: #ffe100; }
+.visitor-baystars { --visitor-color: #005bac; }
+.home-baystars { --home-color: #005bac; }
+.visitor-giants { --visitor-color: #f47a00; }
+.home-giants { --home-color: #f47a00; }
+.visitor-dragons { --visitor-color: #003e8d; }
+.home-dragons { --home-color: #003e8d; }
+.visitor-carp { --visitor-color: #e60012; }
+.home-carp { --home-color: #e60012; }
+.visitor-swallows { --visitor-color: #00744a; }
+.home-swallows { --home-color: #00744a; }
+.visitor-hawks { --visitor-color: #d9ad00; }
+.home-hawks { --home-color: #d9ad00; }
+.visitor-fighters { --visitor-color: #00a0e9; }
+.home-fighters { --home-color: #00a0e9; }
+.visitor-buffaloes { --visitor-color: #9b855d; }
+.home-buffaloes { --home-color: #9b855d; }
+.visitor-eagles { --visitor-color: #870010; }
+.home-eagles { --home-color: #870010; }
+.visitor-lions { --visitor-color: #173f73; }
+.home-lions { --home-color: #173f73; }
+.visitor-marines { --visitor-color: #111827; }
+.home-marines { --home-color: #111827; }
 
 .surge-notice {
   margin-top: 12px;
