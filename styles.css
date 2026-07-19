@@ -275,9 +275,11 @@ h1, h2, p { margin-top: 0; }
   border-radius: 8px;
 }
 
-.abs-button:active { border-bottom-width: 2px; transform: translateY(3px); }
+.abs-button:not(:disabled):active { border-bottom-width: 2px; transform: translateY(3px); }
+.abs-button:disabled { color: #eef0f3; background: #a3a8b0; border-bottom-color: #858a92; cursor: not-allowed; }
 .abs-button strong { font-size: 2.2rem; letter-spacing: .08em; }
 .abs-button span { margin-top: 3px; font-size: .77rem; font-weight: 700; }
+.abs-availability { margin: 10px 0 0; color: #6b7280; font-size: .76rem; font-weight: 700; text-align: center; }
 
 .game-error { margin-top: 30vh; color: var(--muted); text-align: center; }
 
