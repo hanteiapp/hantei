@@ -119,7 +119,12 @@ h1, h2, p { margin-top: 0; }
   font-weight: 800;
 }
 
-.date-nav time { font-size: .88rem; font-weight: 800; text-align: center; }
+.date-nav button:disabled { cursor: not-allowed; opacity: .45; }
+
+.date-picker { position: relative; text-align: center; }
+.date-picker time { font-size: .88rem; font-weight: 800; }
+.date-picker input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.date-picker:focus-within { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 3px; }
 #previous-date { width: 48px; justify-self: start; padding: 0 3px; font-size: .68rem; }
 
 .date-forward {
