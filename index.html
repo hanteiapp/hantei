@@ -34,7 +34,10 @@
       </div>
       <div class="date-nav" aria-label="試合日を選択">
         <button id="previous-date" type="button">← 前日</button>
-        <time id="selected-date"></time>
+        <label class="date-picker">
+          <time id="selected-date"></time>
+          <input id="date-picker" type="date" min="2026-01-01" aria-label="日付を選択">
+        </label>
         <div class="date-forward">
           <button id="today-date" type="button" hidden>本日</button>
           <button id="next-date" type="button" hidden>翌日 →</button>
