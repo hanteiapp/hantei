@@ -1,7 +1,6 @@
 const storageKey = "hantei_abs_events";
 const supabaseUrl = "https://aroguhvdhsjjucdprlra.supabase.co";
 const supabaseKey = "sb_publishable_snAMHKDq3HFEx2d68ch4Sw_zUPeniLq";
-const statusLabels = { scheduled: "試合前", live: "試合中", final: "終了" };
 const teamNames = {
   tigers: "阪神タイガース",
   baystars: "横浜DeNAベイスターズ",
@@ -16,10 +15,6 @@ const teamNames = {
   lions: "埼玉西武ライオンズ",
   marines: "千葉ロッテマリーンズ"
 };
-
-function statusClass(status) {
-  return status === "試合中" ? "live" : status === "終了" ? "finished" : "";
-}
 
 function getEvents() {
   try {
@@ -96,11 +91,12 @@ function formatGame(game) {
     id: game.game_id,
     date: game.game_date,
     time: game.start_time.slice(0, 5),
+    visitorCode: game.visitor_team,
     visitor,
     visitorFull: visitor,
+    homeCode: game.home_team,
     home,
-    homeFull: home,
-    status: statusLabels[game.status] || game.status
+    homeFull: home
   };
 }
 
@@ -131,10 +127,9 @@ async function renderGameList(date) {
     const games = (await supabaseRequest(`games?select=*&game_date=eq.${date}&order=start_time.asc`)).map(formatGame);
     document.querySelector("#game-count").textContent = `${games.length}試合`;
     list.innerHTML = games.map(game => `
-      <a class="game-card" href="game.html?game=${game.id}" aria-label="${game.visitor} 対 ${game.home}、${game.status}">
+      <a class="game-card visitor-${game.visitorCode} home-${game.homeCode}" href="game.html?game=${game.id}" aria-label="${game.visitor} 対 ${game.home}">
         <div class="card-top">
           <span class="card-time">${game.time}</span>
-          <span class="status ${statusClass(game.status)}">${game.status}</span>
         </div>
         <div class="teams">
           <strong><span>VIS</span>${game.visitor}</strong>
@@ -189,12 +184,10 @@ async function renderGamePage() {
 
   document.title = `${game.visitor} vs ${game.home} | HANTEI`;
   document.querySelector(".back-link").href = `index.html?date=${game.date}`;
+  view.classList.add(`visitor-${game.visitorCode}`, `home-${game.homeCode}`);
   document.querySelector("#visitor-name").textContent = game.visitorFull;
   document.querySelector("#home-name").textContent = game.homeFull;
   document.querySelector("#game-time").textContent = `${game.time}開始`;
-  const status = document.querySelector("#game-status");
-  status.textContent = game.status;
-  status.classList.add(statusClass(game.status));
   view.hidden = false;
 
   const dialog = document.querySelector("#details-dialog");
