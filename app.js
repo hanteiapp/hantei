@@ -8,6 +8,8 @@ const games = [
 ];
 
 const storageKey = "hantei_abs_events";
+const supabaseUrl = "https://aroguhvdhsjjucdprlra.supabase.co";
+const supabaseKey = "sb_publishable_snAMHKDq3HFEx2d68ch4Sw_zUPeniLq";
 
 function statusClass(status) {
   return status === "試合中" ? "live" : status === "終了" ? "finished" : "";
@@ -34,6 +36,51 @@ function saveEvents(events) {
 function calculateAbsIndex(events) {
   const cutoff = Date.now() - 60000;
   return Math.min(events.filter(event => event.pressedAt >= cutoff).length * 20, 100);
+}
+
+function getSurgeHistory(events) {
+  const sorted = [...events].sort((a, b) => a.pressedAt - b.pressedAt);
+  return sorted.filter((event, index) => {
+    const recent = sorted.slice(0, index).filter(item => item.pressedAt >= event.pressedAt - 60000);
+    return recent.length === 2;
+  });
+}
+
+async function supabaseRequest(path, options = {}) {
+  const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+      "Content-Type": "application/json",
+      ...options.headers
+    }
+  });
+  if (!response.ok) throw new Error(`Supabase request failed: ${response.status}`);
+  return response.status === 204 ? null : response.json();
+}
+
+function saveAbsEvent(event) {
+  return supabaseRequest("abs_events", {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ id: event.id, game_id: event.gameId, details: null })
+  });
+}
+
+function saveAbsDetails(id, details) {
+  return supabaseRequest(`abs_events?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ details })
+  });
+}
+
+function getRemoteReactionState(gameId) {
+  return supabaseRequest("rpc/get_abs_reaction_state", {
+    method: "POST",
+    body: JSON.stringify({ p_game_id: gameId })
+  });
 }
 
 function renderGameList() {
@@ -77,14 +124,32 @@ function renderGamePage() {
   const dialog = document.querySelector("#details-dialog");
   const form = document.querySelector("#details-form");
   let activeEventId = null;
+  const pendingSaves = new Map();
 
-  function updateAbsDisplay() {
+  function localReactionState() {
     const events = getEvents().filter(event => event.gameId === gameId);
-    const index = calculateAbsIndex(events);
-    document.querySelector("#abs-index").textContent = index;
-    document.querySelector("#abs-meter-fill").style.width = `${index}%`;
-    document.querySelector("#abs-meter").setAttribute("aria-valuenow", index);
-    document.querySelector("#surge-notice").hidden = index < 60;
+    return {
+      isSurging: calculateAbsIndex(events) >= 60,
+      history: getSurgeHistory(events).slice(-5).reverse()
+    };
+  }
+
+  function renderReactionState(state) {
+    document.querySelector("#surge-notice").hidden = !state.isSurging;
+    const list = document.querySelector("#surge-history");
+    list.innerHTML = state.history.map(event => `
+      <li><time datetime="${new Date(event.pressedAt).toISOString()}">${new Date(event.pressedAt).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time><span>ABS反応が急増</span></li>
+    `).join("");
+    list.hidden = state.history.length === 0;
+    document.querySelector("#history-empty").hidden = state.history.length > 0;
+  }
+
+  async function updateReactionState() {
+    try {
+      renderReactionState(await getRemoteReactionState(gameId));
+    } catch {
+      renderReactionState(localReactionState());
+    }
   }
 
   document.querySelector("#abs-button").addEventListener("click", () => {
@@ -98,33 +163,41 @@ function renderGamePage() {
     events.push(event);
     saveEvents(events);
     activeEventId = event.id;
-    updateAbsDisplay();
+    updateReactionState();
+    const save = saveAbsEvent(event).then(updateReactionState).catch(() => updateReactionState());
+    pendingSaves.set(event.id, save);
+    save.finally(() => pendingSaves.delete(event.id));
     form.reset();
     dialog.showModal();
   });
 
   document.querySelector("#close-dialog").addEventListener("click", () => dialog.close());
 
-  form.addEventListener("submit", event => {
+  form.addEventListener("submit", async event => {
     event.preventDefault();
     const data = new FormData(form);
     const events = getEvents();
     const target = events.find(item => item.id === activeEventId);
     if (target) {
-      target.details = {
+      const details = {
         batterName: data.get("batterName") || "",
         pitchNumber: data.get("pitchNumber") || "",
         officialCall: data.get("officialCall") || "",
         fanCall: data.get("fanCall") || ""
       };
+      target.details = details;
       saveEvents(events);
+      try {
+        await pendingSaves.get(activeEventId);
+        await saveAbsDetails(activeEventId, details);
+      } catch {}
     }
     dialog.close();
   });
 
   dialog.addEventListener("close", () => { activeEventId = null; });
-  updateAbsDisplay();
-  setInterval(updateAbsDisplay, 10000);
+  updateReactionState();
+  setInterval(updateReactionState, 10000);
 }
 
 renderGameList();
