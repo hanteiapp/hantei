@@ -190,14 +190,21 @@ async function renderGameList(date) {
 function setupDateNavigation() {
   if (!document.querySelector("#game-list")) return;
   const parameter = new URLSearchParams(location.search).get("date");
+  const minimumDate = "2026-01-01";
   const today = todayInJapan();
+  const previousButton = document.querySelector("#previous-date");
   const nextButton = document.querySelector("#next-date");
   const todayButton = document.querySelector("#today-date");
-  let date = /^\d{4}-\d{2}-\d{2}$/.test(parameter || "") ? parameter : today;
+  const datePicker = document.querySelector("#date-picker");
+  datePicker.max = today;
+  let date = /^\d{4}-\d{2}-\d{2}$/.test(parameter || "")
+    && parameter >= minimumDate && parameter <= today ? parameter : today;
 
   function showDate() {
     document.querySelector("#selected-date").dateTime = date;
     document.querySelector("#selected-date").textContent = formatDate(date);
+    datePicker.value = date;
+    previousButton.disabled = date <= minimumDate;
     nextButton.hidden = date >= today;
     todayButton.hidden = date === today;
     const url = new URL(location.href);
@@ -206,8 +213,8 @@ function setupDateNavigation() {
     renderGameList(date);
   }
 
-  document.querySelector("#previous-date").addEventListener("click", () => {
-    date = shiftDate(date, -1);
+  previousButton.addEventListener("click", () => {
+    if (date > minimumDate) date = shiftDate(date, -1);
     showDate();
   });
   nextButton.addEventListener("click", () => {
@@ -217,6 +224,12 @@ function setupDateNavigation() {
   todayButton.addEventListener("click", () => {
     date = today;
     showDate();
+  });
+  datePicker.addEventListener("change", () => {
+    if (datePicker.value >= minimumDate && datePicker.value <= today) {
+      date = datePicker.value;
+      showDate();
+    }
   });
   showDate();
 }
