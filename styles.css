@@ -14,7 +14,10 @@
 
 * { box-sizing: border-box; }
 
-html { background: var(--background); }
+html {
+  background: var(--background);
+  overscroll-behavior: none;
+}
 
 body {
   margin: 0;
@@ -96,9 +99,9 @@ h1, h2, p { margin-top: 0; }
 
 .date-nav {
   display: grid;
-  grid-template-columns: 78px minmax(0, 1fr) 78px;
+  grid-template-columns: 100px minmax(0, 1fr) 100px;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 12px;
 }
 
@@ -113,7 +116,14 @@ h1, h2, p { margin-top: 0; }
 }
 
 .date-nav time { font-size: .88rem; font-weight: 800; text-align: center; }
-#today-date { grid-column: 1 / -1; justify-self: center; min-height: 30px; padding: 0 18px; }
+
+.date-forward {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.date-forward button { min-width: 0; padding: 0 3px; font-size: .68rem; }
 
 .game-grid {
   display: grid;
