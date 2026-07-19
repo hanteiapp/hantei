@@ -15,6 +15,20 @@ const teamNames = {
   b: "オリックスバファローズ",
   f: "北海道日本ハムファイターズ"
 };
+const teamShortNames = {
+  g: "巨人",
+  c: "広島",
+  s: "ヤクルト",
+  d: "中日",
+  t: "阪神",
+  db: "DeNA",
+  e: "楽天",
+  l: "西武",
+  m: "ロッテ",
+  h: "ソフトバンク",
+  b: "オリックス",
+  f: "日本ハム"
+};
 
 function getEvents() {
   try {
@@ -85,8 +99,10 @@ function getRemoteReactionState(gameId) {
 }
 
 function formatGame(game) {
-  const visitor = teamNames[game.visitor_team] || game.visitor_team;
-  const home = teamNames[game.home_team] || game.home_team;
+  const visitorFull = teamNames[game.visitor_team] || game.visitor_team;
+  const homeFull = teamNames[game.home_team] || game.home_team;
+  const visitor = teamShortNames[game.visitor_team] || visitorFull;
+  const home = teamShortNames[game.home_team] || homeFull;
   const startTime = String(game.start_time || "").trim();
   const cancelled = startTime.toLowerCase() === "cancelled" || startTime === "試合中止";
   return {
@@ -96,10 +112,10 @@ function formatGame(game) {
     cancelled,
     visitorCode: game.visitor_team,
     visitor,
-    visitorFull: visitor,
+    visitorFull,
     homeCode: game.home_team,
     home,
-    homeFull: home,
+    homeFull,
     end: game.game_end,
     umpire: game.home_plate_umpire
   };
@@ -149,8 +165,8 @@ async function renderGameList(date) {
           <span class="card-time">${game.time}</span>
         </div>
         <div class="teams">
-          <strong><span>VIS</span>${game.visitor}</strong>
-          <strong><span>HOME</span>${game.home}</strong>
+          <strong><span>Visitor</span>${game.visitor}</strong>
+          <strong><span>Home</span>${game.home}</strong>
         </div>
       </a>
     `).join("");
