@@ -29,6 +29,10 @@ const teamShortNames = {
   b: "オリックス",
   f: "日本ハム"
 };
+const teamOrder2025 = {
+  t: 1, db: 2, g: 3, d: 4, c: 5, s: 6,
+  h: 7, f: 8, b: 9, e: 10, l: 11, m: 12
+};
 
 function getEvents() {
   try {
@@ -157,7 +161,10 @@ async function renderGameList(date) {
   const empty = document.querySelector("#game-empty");
 
   try {
-    const games = (await supabaseRequest(`games?select=*&game_date=eq.${date}&order=start_time.asc`)).map(formatGame);
+    const games = (await supabaseRequest(`games?select=*&game_date=eq.${date}&order=start_time.asc`))
+      .map(formatGame)
+      .sort((a, b) => Math.min(teamOrder2025[a.visitorCode], teamOrder2025[a.homeCode])
+        - Math.min(teamOrder2025[b.visitorCode], teamOrder2025[b.homeCode]));
     document.querySelector("#game-count").textContent = `${games.length}試合`;
     list.innerHTML = games.map(game => `
       <a class="game-card visitor-${game.visitorCode} home-${game.homeCode}" href="game.html?game=${game.id}" aria-label="${game.visitor} 対 ${game.home}">
