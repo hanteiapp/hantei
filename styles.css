@@ -51,10 +51,12 @@ button, select { cursor: pointer; }
 
 .brand {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
   text-decoration: none;
 }
+
+.brand img { width: 32px; height: 32px; border-radius: 7px; }
 
 .brand span {
   color: var(--navy);
@@ -64,6 +66,8 @@ button, select { cursor: pointer; }
 }
 
 .brand small { color: var(--muted); font-size: .72rem; font-weight: 700; }
+.brand-compact { gap: 7px; }
+.brand-compact img { width: 26px; height: 26px; border-radius: 6px; }
 .brand-compact span { font-size: .95rem; }
 
 .back-link {
