@@ -2,18 +2,18 @@ const storageKey = "hantei_abs_events";
 const supabaseUrl = "https://aroguhvdhsjjucdprlra.supabase.co";
 const supabaseKey = "sb_publishable_snAMHKDq3HFEx2d68ch4Sw_zUPeniLq";
 const teamNames = {
-  tigers: "阪神タイガース",
-  baystars: "横浜DeNAベイスターズ",
-  giants: "読売ジャイアンツ",
-  dragons: "中日ドラゴンズ",
-  carp: "広島東洋カープ",
-  swallows: "東京ヤクルトスワローズ",
-  hawks: "福岡ソフトバンクホークス",
-  fighters: "北海道日本ハムファイターズ",
-  buffaloes: "オリックスバファローズ",
-  eagles: "東北楽天ゴールデンイーグルス",
-  lions: "埼玉西武ライオンズ",
-  marines: "千葉ロッテマリーンズ"
+  g: "読売ジャイアンツ",
+  d: "中日ドラゴンズ",
+  db: "横浜DeNAベイスターズ",
+  s: "東京ヤクルトスワローズ",
+  c: "広島東洋カープ",
+  t: "阪神タイガース",
+  e: "東北楽天ゴールデンイーグルス",
+  l: "埼玉西武ライオンズ",
+  m: "千葉ロッテマリーンズ",
+  h: "福岡ソフトバンクホークス",
+  b: "オリックスバファローズ",
+  f: "北海道日本ハムファイターズ"
 };
 
 function getEvents() {
@@ -96,7 +96,8 @@ function formatGame(game) {
     visitorFull: visitor,
     homeCode: game.home_team,
     home,
-    homeFull: home
+    homeFull: home,
+    end: game.game_end
   };
 }
 
@@ -209,8 +210,10 @@ async function renderGamePage() {
   const pendingSaves = new Map();
 
   function updateAbsAvailability() {
-    const available = isAbsAvailable(game);
+    const ended = game.end === "final";
+    const available = !ended && isAbsAvailable(game);
     absButton.disabled = !available;
+    availability.textContent = ended ? "この試合は終了しました。" : "試合開始後よりご利用いただけます。";
     availability.hidden = available;
   }
 
