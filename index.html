@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="今日の野球の試合を選んで、気になった判定に声を届けるHANTEI。">
+  <title>HANTEI | 今日の試合</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="home-shell">
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="HANTEI トップページ">
+        <span>HANTEI</span>
+        <small>みんなのABS</small>
+      </a>
+    </header>
+
+    <section aria-labelledby="games-heading">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">TODAY'S GAMES</p>
+          <h1 id="games-heading">今日の試合</h1>
+        </div>
+        <span class="game-count">6試合</span>
+      </div>
+      <div id="game-list" class="game-grid"></div>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
