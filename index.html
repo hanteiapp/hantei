@@ -4,7 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="今日の野球の試合を選んで、気になった判定に声を届けるHANTEI。">
+  <meta name="theme-color" content="#071328">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="HANTEI">
   <title>HANTEI | 試合一覧</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon.svg">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -27,8 +33,10 @@
       <div class="date-nav" aria-label="試合日を選択">
         <button id="previous-date" type="button">← 前日</button>
         <time id="selected-date"></time>
-        <button id="next-date" type="button" hidden>翌日 →</button>
-        <button id="today-date" type="button" hidden>本日</button>
+        <div class="date-forward">
+          <button id="today-date" type="button" hidden>本日</button>
+          <button id="next-date" type="button" hidden>翌日 →</button>
+        </div>
       </div>
       <div id="game-list" class="game-grid"></div>
       <p id="game-empty" class="empty-message" hidden></p>
