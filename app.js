@@ -2,19 +2,19 @@ const storageKey = "hantei_abs_events";
 const supabaseUrl = "https://aroguhvdhsjjucdprlra.supabase.co";
 const supabaseKey = "sb_publishable_snAMHKDq3HFEx2d68ch4Sw_zUPeniLq";
 const statusLabels = { scheduled: "試合前", live: "試合中", final: "終了" };
-const shortTeams = {
-  "阪神タイガース": "阪神",
-  "読売ジャイアンツ": "巨人",
-  "広島東洋カープ": "広島",
-  "横浜DeNAベイスターズ": "DeNA",
-  "東京ヤクルトスワローズ": "ヤクルト",
-  "中日ドラゴンズ": "中日",
-  "北海道日本ハムファイターズ": "日本ハム",
-  "福岡ソフトバンクホークス": "ソフトバンク",
-  "千葉ロッテマリーンズ": "ロッテ",
-  "オリックス・バファローズ": "オリックス",
-  "埼玉西武ライオンズ": "西武",
-  "東北楽天ゴールデンイーグルス": "楽天"
+const teamNames = {
+  tigers: "阪神タイガース",
+  baystars: "横浜DeNAベイスターズ",
+  giants: "読売ジャイアンツ",
+  dragons: "中日ドラゴンズ",
+  carp: "広島東洋カープ",
+  swallows: "東京ヤクルトスワローズ",
+  hawks: "福岡ソフトバンクホークス",
+  fighters: "北海道日本ハムファイターズ",
+  buffaloes: "オリックス・バファローズ",
+  eagles: "東北楽天ゴールデンイーグルス",
+  lions: "埼玉西武ライオンズ",
+  marines: "千葉ロッテマリーンズ"
 };
 
 function statusClass(status) {
@@ -90,23 +90,44 @@ function getRemoteReactionState(gameId) {
 }
 
 function formatGame(game) {
+  const visitor = teamNames[game.visitor_team] || game.visitor_team;
+  const home = teamNames[game.home_team] || game.home_team;
   return {
     id: game.game_id,
+    date: game.game_date,
     time: game.start_time.slice(0, 5),
-    visitor: shortTeams[game.visitor_team] || game.visitor_team,
-    visitorFull: game.visitor_team,
-    home: shortTeams[game.home_team] || game.home_team,
-    homeFull: game.home_team,
+    visitor,
+    visitorFull: visitor,
+    home,
+    homeFull: home,
     status: statusLabels[game.status] || game.status
   };
 }
 
-async function renderGameList() {
+function todayInJapan() {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date());
+}
+
+function shiftDate(date, days) {
+  const [year, month, day] = date.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
+function formatDate(date) {
+  return new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+    timeZone: "Asia/Tokyo"
+  }).format(new Date(`${date}T00:00:00+09:00`));
+}
+
+async function renderGameList(date) {
   const list = document.querySelector("#game-list");
   if (!list) return;
 
   try {
-    const date = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date());
     const games = (await supabaseRequest(`games?select=*&game_date=eq.${date}&order=start_time.asc,game_number.asc`)).map(formatGame);
     document.querySelector("#game-count").textContent = `${games.length}試合`;
     list.innerHTML = games.map(game => `
@@ -126,6 +147,31 @@ async function renderGameList() {
   }
 }
 
+function setupDateNavigation() {
+  if (!document.querySelector("#game-list")) return;
+  const parameter = new URLSearchParams(location.search).get("date");
+  let date = /^\d{4}-\d{2}-\d{2}$/.test(parameter || "") ? parameter : todayInJapan();
+
+  function showDate() {
+    document.querySelector("#selected-date").dateTime = date;
+    document.querySelector("#selected-date").textContent = formatDate(date);
+    const url = new URL(location.href);
+    url.searchParams.set("date", date);
+    history.replaceState(null, "", url);
+    renderGameList(date);
+  }
+
+  document.querySelector("#previous-date").addEventListener("click", () => {
+    date = shiftDate(date, -1);
+    showDate();
+  });
+  document.querySelector("#next-date").addEventListener("click", () => {
+    date = shiftDate(date, 1);
+    showDate();
+  });
+  showDate();
+}
+
 async function renderGamePage() {
   const view = document.querySelector("#game-view");
   if (!view) return;
@@ -142,6 +188,7 @@ async function renderGamePage() {
   }
 
   document.title = `${game.visitor} vs ${game.home} | HANTEI`;
+  document.querySelector(".back-link").href = `index.html?date=${game.date}`;
   document.querySelector("#visitor-name").textContent = game.visitorFull;
   document.querySelector("#home-name").textContent = game.homeFull;
   document.querySelector("#game-time").textContent = `${game.time}開始`;
@@ -229,5 +276,5 @@ async function renderGamePage() {
   setInterval(updateReactionState, 10000);
 }
 
-renderGameList();
+setupDateNavigation();
 renderGamePage();
