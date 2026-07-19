@@ -30,18 +30,6 @@
         <span>この試合の判定に注目が集まっています</span>
       </div>
 
-      <section class="abs-panel" aria-labelledby="abs-heading">
-        <p class="eyebrow">LIVE REACTION</p>
-        <div class="index-heading">
-          <h1 id="abs-heading">ABS指数</h1>
-          <strong id="abs-index">0</strong>
-        </div>
-        <div id="abs-meter" class="meter" role="meter" aria-label="ABS指数" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-          <span id="abs-meter-fill"></span>
-        </div>
-        <p class="index-note">直近60秒のファンの反応</p>
-      </section>
-
       <div class="action-area">
         <p>気になった一球に、ファンの声を。</p>
         <button id="abs-button" class="abs-button" type="button">
@@ -49,6 +37,15 @@
           <span>今の判定を確認してほしい</span>
         </button>
       </div>
+
+      <section class="reaction-history" aria-labelledby="history-heading">
+        <div class="history-heading">
+          <h1 id="history-heading">ABS反応履歴</h1>
+          <span>この試合</span>
+        </div>
+        <p id="history-empty">急増した履歴はまだありません</p>
+        <ol id="surge-history" hidden></ol>
+      </section>
     </section>
 
     <p id="game-error" class="game-error" hidden>試合が見つかりませんでした。</p>
