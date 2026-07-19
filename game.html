@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="試合中の気になった一球をABSで確認してほしいと伝えるHANTEI。">
+  <title>試合 | HANTEI</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="game-shell">
+    <header class="game-header">
+      <a class="back-link" href="index.html" aria-label="今日の試合一覧へ戻る">← 今日の試合</a>
+      <a class="brand brand-compact" href="index.html"><span>HANTEI</span></a>
+    </header>
+
+    <section id="game-view" hidden>
+      <div class="match-card">
+        <p id="game-status" class="status"></p>
+        <div class="matchup">
+          <strong id="visitor-name"></strong>
+          <span>対</span>
+          <strong id="home-name"></strong>
+        </div>
+        <p id="game-time" class="match-time"></p>
+      </div>
+
+      <div id="surge-notice" class="surge-notice" aria-live="polite" hidden>
+        <strong>ABS反応が急増しています</strong>
+        <span>この試合の判定に注目が集まっています</span>
+      </div>
+
+      <section class="abs-panel" aria-labelledby="abs-heading">
+        <p class="eyebrow">LIVE REACTION</p>
+        <div class="index-heading">
+          <h1 id="abs-heading">ABS指数</h1>
+          <strong id="abs-index">0</strong>
+        </div>
+        <div id="abs-meter" class="meter" role="meter" aria-label="ABS指数" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <span id="abs-meter-fill"></span>
+        </div>
+        <p class="index-note">直近60秒のファンの反応</p>
+      </section>
+
+      <div class="action-area">
+        <p>気になった一球に、ファンの声を。</p>
+        <button id="abs-button" class="abs-button" type="button">
+          <strong>ABS</strong>
+          <span>今の判定を確認してほしい</span>
+        </button>
+      </div>
+    </section>
+
+    <p id="game-error" class="game-error" hidden>試合が見つかりませんでした。</p>
+  </main>
+
+  <dialog id="details-dialog" class="details-dialog" aria-labelledby="details-title">
+    <form id="details-form" method="dialog">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <div class="sheet-heading">
+        <div>
+          <p class="eyebrow">OPTIONAL</p>
+          <h2 id="details-title">判定の詳細</h2>
+        </div>
+        <button id="close-dialog" class="close-button" type="button" aria-label="詳細入力画面を閉じる">×</button>
+      </div>
+
+      <label for="batter-name">打者名</label>
+      <input id="batter-name" name="batterName" type="text" placeholder="例：佐藤輝明" autocomplete="off">
+
+      <label for="pitch-number">何球目</label>
+      <select id="pitch-number" name="pitchNumber">
+        <option value="">選択してください</option>
+        <option value="1">1球目</option>
+        <option value="2">2球目</option>
+        <option value="3">3球目</option>
+        <option value="4">4球目</option>
+        <option value="5">5球目</option>
+        <option value="6">6球目</option>
+        <option value="7+">7球目以上</option>
+      </select>
+
+      <fieldset>
+        <legend>実際の判定</legend>
+        <div class="choice-row">
+          <label><input type="radio" name="officialCall" value="strike"><span>ストライク</span></label>
+          <label><input type="radio" name="officialCall" value="ball"><span>ボール</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>自分が正しいと思う判定</legend>
+        <div class="choice-row">
+          <label><input type="radio" name="fanCall" value="strike"><span>ストライクだと思う</span></label>
+          <label><input type="radio" name="fanCall" value="ball"><span>ボールだと思う</span></label>
+        </div>
+      </fieldset>
+
+      <button class="submit-button" type="submit">詳細を送信</button>
+    </form>
+  </dialog>
+  <script src="app.js"></script>
+</body>
+</html>
