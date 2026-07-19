@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "HANTEI みんなのABS",
+  "short_name": "HANTEI",
+  "description": "気になった一球に、ファンの声を。",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f3f5f8",
+  "theme_color": "#071328",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
