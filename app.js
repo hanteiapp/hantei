@@ -104,6 +104,17 @@ function todayInJapan() {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date());
 }
 
+function isAbsAvailable(game, now = new Date()) {
+  const time = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Tokyo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).format(now);
+  return game.date === new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(now)
+    && time >= game.time;
+}
+
 function shiftDate(date, days) {
   const [year, month, day] = date.split("-").map(Number);
   return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
@@ -192,8 +203,16 @@ async function renderGamePage() {
 
   const dialog = document.querySelector("#details-dialog");
   const form = document.querySelector("#details-form");
+  const absButton = document.querySelector("#abs-button");
+  const availability = document.querySelector("#abs-availability");
   let activeEventId = null;
   const pendingSaves = new Map();
+
+  function updateAbsAvailability() {
+    const available = isAbsAvailable(game);
+    absButton.disabled = !available;
+    availability.hidden = available;
+  }
 
   function localReactionState() {
     const events = getEvents().filter(event => event.gameId === gameId);
@@ -221,7 +240,7 @@ async function renderGamePage() {
     }
   }
 
-  document.querySelector("#abs-button").addEventListener("click", () => {
+  absButton.addEventListener("click", () => {
     const event = {
       id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       gameId,
@@ -265,7 +284,9 @@ async function renderGamePage() {
   });
 
   dialog.addEventListener("close", () => { activeEventId = null; });
+  updateAbsAvailability();
   updateReactionState();
+  setInterval(updateAbsAvailability, 10000);
   setInterval(updateReactionState, 10000);
 }
 
