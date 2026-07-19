@@ -10,7 +10,7 @@ const teamNames = {
   swallows: "東京ヤクルトスワローズ",
   hawks: "福岡ソフトバンクホークス",
   fighters: "北海道日本ハムファイターズ",
-  buffaloes: "オリックス・バファローズ",
+  buffaloes: "オリックスバファローズ",
   eagles: "東北楽天ゴールデンイーグルス",
   lions: "埼玉西武ライオンズ",
   marines: "千葉ロッテマリーンズ"
