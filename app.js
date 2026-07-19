@@ -1,15 +1,21 @@
-const games = [
-  { id: 1, time: "18:00", visitor: "阪神", visitorFull: "阪神タイガース", home: "巨人", homeFull: "読売ジャイアンツ", status: "試合中" },
-  { id: 2, time: "18:00", visitor: "広島", visitorFull: "広島東洋カープ", home: "DeNA", homeFull: "横浜DeNAベイスターズ", status: "試合前" },
-  { id: 3, time: "18:00", visitor: "ヤクルト", visitorFull: "東京ヤクルトスワローズ", home: "中日", homeFull: "中日ドラゴンズ", status: "試合中" },
-  { id: 4, time: "18:00", visitor: "日本ハム", visitorFull: "北海道日本ハムファイターズ", home: "ソフトバンク", homeFull: "福岡ソフトバンクホークス", status: "試合前" },
-  { id: 5, time: "18:00", visitor: "ロッテ", visitorFull: "千葉ロッテマリーンズ", home: "オリックス", homeFull: "オリックス・バファローズ", status: "終了" },
-  { id: 6, time: "18:00", visitor: "西武", visitorFull: "埼玉西武ライオンズ", home: "楽天", homeFull: "東北楽天ゴールデンイーグルス", status: "終了" }
-];
-
 const storageKey = "hantei_abs_events";
 const supabaseUrl = "https://aroguhvdhsjjucdprlra.supabase.co";
 const supabaseKey = "sb_publishable_snAMHKDq3HFEx2d68ch4Sw_zUPeniLq";
+const statusLabels = { scheduled: "試合前", live: "試合中", final: "終了" };
+const shortTeams = {
+  "阪神タイガース": "阪神",
+  "読売ジャイアンツ": "巨人",
+  "広島東洋カープ": "広島",
+  "横浜DeNAベイスターズ": "DeNA",
+  "東京ヤクルトスワローズ": "ヤクルト",
+  "中日ドラゴンズ": "中日",
+  "北海道日本ハムファイターズ": "日本ハム",
+  "福岡ソフトバンクホークス": "ソフトバンク",
+  "千葉ロッテマリーンズ": "ロッテ",
+  "オリックス・バファローズ": "オリックス",
+  "埼玉西武ライオンズ": "西武",
+  "東北楽天ゴールデンイーグルス": "楽天"
+};
 
 function statusClass(status) {
   return status === "試合中" ? "live" : status === "終了" ? "finished" : "";
@@ -83,30 +89,53 @@ function getRemoteReactionState(gameId) {
   });
 }
 
-function renderGameList() {
+function formatGame(game) {
+  return {
+    id: game.game_id,
+    time: game.start_time.slice(0, 5),
+    visitor: shortTeams[game.visitor_team] || game.visitor_team,
+    visitorFull: game.visitor_team,
+    home: shortTeams[game.home_team] || game.home_team,
+    homeFull: game.home_team,
+    status: statusLabels[game.status] || game.status
+  };
+}
+
+async function renderGameList() {
   const list = document.querySelector("#game-list");
   if (!list) return;
 
-  list.innerHTML = games.map(game => `
-    <a class="game-card" href="game.html?game=${game.id}" aria-label="${game.visitor} 対 ${game.home}、${game.status}">
-      <div class="card-top">
-        <span class="card-time">${game.time}</span>
-        <span class="status ${statusClass(game.status)}">${game.status}</span>
-      </div>
-      <div class="teams">
-        <strong><span>VIS</span>${game.visitor}</strong>
-        <strong><span>HOME</span>${game.home}</strong>
-      </div>
-    </a>
-  `).join("");
+  try {
+    const date = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date());
+    const games = (await supabaseRequest(`games?select=*&game_date=eq.${date}&order=start_time.asc,game_number.asc`)).map(formatGame);
+    document.querySelector("#game-count").textContent = `${games.length}試合`;
+    list.innerHTML = games.map(game => `
+      <a class="game-card" href="game.html?game=${game.id}" aria-label="${game.visitor} 対 ${game.home}、${game.status}">
+        <div class="card-top">
+          <span class="card-time">${game.time}</span>
+          <span class="status ${statusClass(game.status)}">${game.status}</span>
+        </div>
+        <div class="teams">
+          <strong><span>VIS</span>${game.visitor}</strong>
+          <strong><span>HOME</span>${game.home}</strong>
+        </div>
+      </a>
+    `).join("");
+  } catch {
+    document.querySelector("#game-count").textContent = "0試合";
+  }
 }
 
-function renderGamePage() {
+async function renderGamePage() {
   const view = document.querySelector("#game-view");
   if (!view) return;
 
-  const gameId = Number(new URLSearchParams(location.search).get("game"));
-  const game = games.find(item => item.id === gameId);
+  const gameId = new URLSearchParams(location.search).get("game");
+  let game;
+  try {
+    const games = await supabaseRequest(`games?select=*&game_id=eq.${encodeURIComponent(gameId)}&limit=1`);
+    game = games[0] && formatGame(games[0]);
+  } catch {}
   if (!game) {
     document.querySelector("#game-error").hidden = false;
     return;
