@@ -254,7 +254,8 @@ async function renderGamePage() {
   view.classList.add(`visitor-${game.visitorCode}`, `home-${game.homeCode}`);
   document.querySelector("#visitor-name").textContent = game.visitorFull;
   document.querySelector("#home-name").textContent = game.homeFull;
-  document.querySelector("#game-time").textContent = game.cancelled ? "試合中止" : `${game.time}開始`;
+  const gameDate = formatDate(game.date).replace("(", " (");
+  document.querySelector("#game-time").textContent = `${gameDate} ${game.cancelled ? "試合中止" : `${game.time}開始`}`;
   const umpire = document.querySelector("#game-umpire");
   umpire.textContent = `球審：${game.umpire || ""}`;
   umpire.hidden = !game.umpire;
