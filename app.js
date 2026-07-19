@@ -128,7 +128,7 @@ async function renderGameList(date) {
   if (!list) return;
 
   try {
-    const games = (await supabaseRequest(`games?select=*&game_date=eq.${date}&order=start_time.asc,game_number.asc`)).map(formatGame);
+    const games = (await supabaseRequest(`games?select=*&game_date=eq.${date}&order=start_time.asc`)).map(formatGame);
     document.querySelector("#game-count").textContent = `${games.length}試合`;
     list.innerHTML = games.map(game => `
       <a class="game-card" href="game.html?game=${game.id}" aria-label="${game.visitor} 対 ${game.home}、${game.status}">
