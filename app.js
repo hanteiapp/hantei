@@ -97,7 +97,8 @@ function formatGame(game) {
     homeCode: game.home_team,
     home,
     homeFull: home,
-    end: game.game_end
+    end: game.game_end,
+    umpire: game.home_plate_umpire
   };
 }
 
@@ -172,10 +173,6 @@ function setupDateNavigation() {
     date = shiftDate(date, -1);
     showDate();
   });
-  document.querySelector("#next-date").addEventListener("click", () => {
-    date = shiftDate(date, 1);
-    showDate();
-  });
   showDate();
 }
 
@@ -200,6 +197,9 @@ async function renderGamePage() {
   document.querySelector("#visitor-name").textContent = game.visitorFull;
   document.querySelector("#home-name").textContent = game.homeFull;
   document.querySelector("#game-time").textContent = `${game.time}開始`;
+  const umpire = document.querySelector("#game-umpire");
+  umpire.textContent = `球審：${game.umpire || ""}`;
+  umpire.hidden = !game.umpire;
   view.hidden = false;
 
   const dialog = document.querySelector("#details-dialog");
