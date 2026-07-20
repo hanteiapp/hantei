@@ -198,6 +198,10 @@ h1, h2, p { margin-top: 0; }
 
 .match-card {
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(180px, .65fr);
+  align-items: center;
+  gap: 24px;
   padding: 22px 18px 20px;
   overflow: hidden;
   color: white;
@@ -246,10 +250,9 @@ h1, h2, p { margin-top: 0; }
 .home-m { --home-color: #111827; }
 
 .surge-notice {
-  margin-top: 12px;
   padding: 13px 14px;
   color: #8c1820;
-  background: #fff0f1;
+  background: rgba(255, 240, 241, .96);
   border-left: 4px solid var(--red);
   border-radius: 4px;
 }
@@ -297,6 +300,7 @@ h1, h2, p { margin-top: 0; }
 .abs-button {
   display: grid;
   width: 100%;
+  height: 96px;
   min-height: 96px;
   place-content: center;
   color: white;
@@ -310,6 +314,25 @@ h1, h2, p { margin-top: 0; }
 .abs-button:disabled { color: #eef0f3; background: #a3a8b0; border-bottom-color: #858a92; cursor: not-allowed; }
 .abs-button strong { font-size: 1.25rem; letter-spacing: .02em; }
 .abs-button span { margin-top: 3px; font-size: .77rem; font-weight: 700; }
+.abs-confirmation {
+  display: grid;
+  grid-template-rows: 1fr 32px;
+  gap: 6px;
+  height: 96px;
+  min-height: 96px;
+  padding: 8px 12px;
+  overflow: hidden;
+  color: white;
+  background: var(--blue);
+  border-radius: 8px;
+  text-align: center;
+}
+.abs-confirmation p { align-self: center; margin: 0; font-size: .76rem; line-height: 1.25; }
+.abs-confirmation p span { display: block; margin-top: 2px; }
+.abs-confirmation > div { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.abs-confirmation button { min-height: 0; padding: 0 8px; border: 1px solid white; border-radius: 5px; font-size: .82rem; font-weight: 800; line-height: 1; }
+#open-details { color: var(--blue); background: white; }
+#skip-details { color: white; background: transparent; }
 .abs-availability { margin: 10px 0 0; color: #6b7280; font-size: .76rem; font-weight: 700; text-align: center; }
 
 .player-field { position: relative; }
@@ -321,13 +344,12 @@ h1, h2, p { margin-top: 0; }
   background: color-mix(in srgb, var(--field-team-color) 14%, white);
   border-color: var(--field-team-color);
 }
-.offense-team { margin-bottom: 16px; }
 .offense-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .offense-options label { position: relative; }
 .offense-options input { position: absolute; opacity: 0; }
 .offense-options span {
   display: grid;
-  min-height: 46px;
+  min-height: 44px;
   padding: 6px;
   place-items: center;
   color: var(--ink);
@@ -413,6 +435,15 @@ h1, h2, p { margin-top: 0; }
 .details-dialog form > label,
 .details-dialog legend { display: block; margin-bottom: 7px; font-size: .78rem; font-weight: 800; }
 
+.detail-row {
+  display: grid;
+  grid-template-columns: 7.4rem minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.detail-row > label, .detail-label { font-size: .76rem; font-weight: 800; }
+
 .details-dialog input[type="text"],
 .details-dialog select {
   width: 100%;
@@ -424,9 +455,11 @@ h1, h2, p { margin-top: 0; }
   border: 1px solid #cdd3dc;
   border-radius: 5px;
 }
+.detail-row input[type="text"], .detail-row select { margin-bottom: 0; }
 
 fieldset { margin: 0 0 16px; padding: 0; border: 0; }
 .choice-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.choice-row.three-options { grid-template-columns: repeat(3, 1fr); gap: 5px; }
 .choice-row label { position: relative; }
 .choice-row input { position: absolute; opacity: 0; }
 .choice-row span {
@@ -445,6 +478,20 @@ fieldset { margin: 0 0 16px; padding: 0; border: 0; }
 
 .choice-row input:checked + span { color: var(--blue); background: #eaf0f8; border-color: var(--blue); }
 .choice-row input:focus-visible + span { outline: 3px solid #7aa7e3; outline-offset: 2px; }
+.auto-call {
+  display: grid;
+  min-height: 44px;
+  padding: 5px 10px;
+  place-items: center;
+  color: var(--muted);
+  background: #f4f6f9;
+  border: 1px solid #cdd3dc;
+  border-radius: 5px;
+  font-size: .76rem;
+  font-weight: 800;
+  text-align: center;
+}
+.auto-call.selected { color: var(--blue); background: #eaf0f8; border-color: var(--blue); }
 
 .submit-button {
   width: 100%;
@@ -462,6 +509,11 @@ fieldset { margin: 0 0 16px; padding: 0; border: 0; }
   .home-shell, .game-shell { padding-right: 24px; padding-left: 24px; }
   .game-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .game-card { min-height: 150px; padding: 16px; }
+}
+
+@media (max-width: 599px) {
+  .match-card { grid-template-columns: 1fr; gap: 14px; }
+  .surge-notice { margin-top: 0; }
 }
 
 @media (max-width: 350px) {
