@@ -41,11 +41,17 @@
       </div>
 
       <div class="action-area">
-        <p>気になった一球に、ファンの声を。</p>
-        <button id="abs-button" class="abs-button" type="button" aria-describedby="abs-availability">
-          <strong>ABS</strong>
-          <span>今の判定を確認してほしい</span>
-        </button>
+        <p>気になった判定に、ファンの声を。</p>
+        <div class="action-buttons">
+          <button id="abs-button" class="abs-button reaction-button" type="button" aria-describedby="abs-availability">
+            <strong>ファンABSチャレンジ</strong>
+            <span>ボール・ストライク判定</span>
+          </button>
+          <button id="request-button" class="abs-button reaction-button" type="button" aria-describedby="abs-availability">
+            <strong>ファンリクエスト</strong>
+            <span>アウト／セーフ、フェア／ファウルなど</span>
+          </button>
+        </div>
         <p id="abs-availability" class="abs-availability" hidden>試合開始後よりご利用いただけます。</p>
       </div>
 
@@ -73,8 +79,33 @@
         <button id="close-dialog" class="close-button" type="button" aria-label="詳細入力画面を閉じる">×</button>
       </div>
 
+      <fieldset class="offense-team">
+        <legend>攻撃チーム</legend>
+        <div class="offense-options">
+          <label class="visitor-choice">
+            <input id="offense-visitor" type="radio" name="offenseTeamCode">
+            <span id="offense-visitor-name"></span>
+          </label>
+          <label class="home-choice">
+            <input id="offense-home" type="radio" name="offenseTeamCode">
+            <span id="offense-home-name"></span>
+          </label>
+        </div>
+      </fieldset>
+
       <label for="batter-name">打者名</label>
-      <input id="batter-name" name="batterName" type="text" placeholder="例：佐藤輝明" autocomplete="off">
+      <div class="player-field">
+        <input id="batter-name" name="batterName" type="text" placeholder="選手名・背番号を入力" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="batter-suggestions" aria-expanded="false">
+        <button id="clear-batter" class="clear-player" type="button" aria-label="入力した打者名を消す" hidden>×</button>
+        <div id="batter-suggestions" class="player-suggestions" role="listbox" hidden></div>
+      </div>
+
+      <label for="pitcher-name">投手名</label>
+      <div class="player-field">
+        <input id="pitcher-name" name="pitcherName" type="text" placeholder="選手名・背番号を入力" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="pitcher-suggestions" aria-expanded="false">
+        <button id="clear-pitcher" class="clear-player" type="button" aria-label="入力した投手名を消す" hidden>×</button>
+        <div id="pitcher-suggestions" class="player-suggestions" role="listbox" hidden></div>
+      </div>
 
       <label for="pitch-number">何球目</label>
       <select id="pitch-number" name="pitchNumber">
