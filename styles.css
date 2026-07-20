@@ -292,11 +292,12 @@ h1, h2, p { margin-top: 0; }
 
 .action-area { padding: 22px 0 0; }
 .action-area > p { margin-bottom: 10px; color: var(--muted); font-size: .76rem; text-align: center; }
+.action-buttons { display: grid; gap: 10px; }
 
 .abs-button {
   display: grid;
   width: 100%;
-  min-height: 112px;
+  min-height: 96px;
   place-content: center;
   color: white;
   background: var(--blue);
@@ -307,9 +308,78 @@ h1, h2, p { margin-top: 0; }
 
 .abs-button:not(:disabled):active { border-bottom-width: 2px; transform: translateY(3px); }
 .abs-button:disabled { color: #eef0f3; background: #a3a8b0; border-bottom-color: #858a92; cursor: not-allowed; }
-.abs-button strong { font-size: 2.2rem; letter-spacing: .08em; }
+.abs-button strong { font-size: 1.25rem; letter-spacing: .02em; }
 .abs-button span { margin-top: 3px; font-size: .77rem; font-weight: 700; }
 .abs-availability { margin: 10px 0 0; color: #6b7280; font-size: .76rem; font-weight: 700; text-align: center; }
+
+.player-field { position: relative; }
+.player-field input[type="text"] { padding-right: 42px; }
+.player-field.tone-visitor { --field-team-color: var(--visitor-color); }
+.player-field.tone-home { --field-team-color: var(--home-color); }
+.player-field.tone-visitor input[type="text"],
+.player-field.tone-home input[type="text"] {
+  background: color-mix(in srgb, var(--field-team-color) 14%, white);
+  border-color: var(--field-team-color);
+}
+.offense-team { margin-bottom: 16px; }
+.offense-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.offense-options label { position: relative; }
+.offense-options input { position: absolute; opacity: 0; }
+.offense-options span {
+  display: grid;
+  min-height: 46px;
+  padding: 6px;
+  place-items: center;
+  color: var(--ink);
+  border: 2px solid var(--team-color);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--team-color) 14%, white);
+  font-size: .8rem;
+  font-weight: 800;
+  text-align: center;
+}
+.offense-options .visitor-choice { --team-color: var(--visitor-color); }
+.offense-options .home-choice { --team-color: var(--home-color); }
+.offense-options input:checked + span { background: color-mix(in srgb, var(--team-color) 35%, white); box-shadow: inset 0 0 0 1px var(--team-color); }
+.offense-options input:focus-visible + span { outline: 3px solid #7aa7e3; outline-offset: 2px; }
+.clear-player {
+  position: absolute;
+  z-index: 3;
+  top: 6px;
+  right: 6px;
+  width: 32px;
+  height: 32px;
+  color: #596273;
+  background: #eef0f3;
+  border: 0;
+  border-radius: 50%;
+  font-size: 1rem;
+}
+.player-suggestions {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + 4px);
+  width: 100%;
+  max-height: 230px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgb(7 19 40 / 12%);
+}
+.player-suggestions section > strong { display: block; padding: 8px 12px 4px; color: var(--muted); font-size: .7rem; }
+.player-suggestions button {
+  display: flex;
+  width: 100%;
+  gap: 10px;
+  padding: 9px 12px;
+  color: var(--ink);
+  background: white;
+  border: 0;
+  text-align: left;
+}
+.player-suggestions button:hover, .player-suggestions button:focus { background: #f0f4fa; }
+.player-suggestions button span { width: 2rem; color: var(--muted); text-align: right; }
 
 .game-error { margin-top: 30vh; color: var(--muted); text-align: center; }
 
