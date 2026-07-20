@@ -29,6 +29,10 @@ const teamShortNames = {
   b: "オリックス",
   f: "日本ハム"
 };
+const teamAbbreviations = {
+  g: "巨", t: "神", db: "D", c: "広", s: "ヤ", d: "中",
+  h: "ソ", f: "日", m: "ロ", e: "楽", b: "オ", l: "西"
+};
 const teamOrder2025 = {
   t: 1, db: 2, g: 3, d: 4, c: 5, s: 6,
   h: 7, f: 8, b: 9, e: 10, l: 11, m: 12
@@ -293,19 +297,25 @@ async function renderGamePage() {
   dialog.classList.add(`visitor-${game.visitorCode}`, `home-${game.homeCode}`);
   const form = document.querySelector("#details-form");
   const absButton = document.querySelector("#abs-button");
+  const absConfirmation = document.querySelector("#abs-confirmation");
   const actionButtons = document.querySelectorAll(".reaction-button");
   const availability = document.querySelector("#abs-availability");
   const offenseTeamInputs = document.querySelectorAll('input[name="offenseTeamCode"]');
   const batterInput = document.querySelector("#batter-name");
   const pitcherInput = document.querySelector("#pitcher-name");
+  const fanCallInput = document.querySelector("#fan-call");
+  const fanCallOutput = document.querySelector("#fan-call-output");
   let players = [];
   let activeEventId = null;
+  let detailPromptTimer;
   const pendingSaves = new Map();
 
   document.querySelector("#offense-visitor").value = game.visitorCode;
   document.querySelector("#offense-home").value = game.homeCode;
-  document.querySelector("#offense-visitor-name").textContent = game.visitor;
-  document.querySelector("#offense-home-name").textContent = game.home;
+  document.querySelector("#offense-visitor").setAttribute("aria-label", `${game.visitor}を攻撃チームに選択`);
+  document.querySelector("#offense-home").setAttribute("aria-label", `${game.home}を攻撃チームに選択`);
+  document.querySelector("#offense-visitor-name").textContent = teamAbbreviations[game.visitorCode] || game.visitor;
+  document.querySelector("#offense-home-name").textContent = teamAbbreviations[game.homeCode] || game.home;
   getPlayers(game).then(data => {
     players = data.sort((a, b) => Number(a.uniform_number) - Number(b.uniform_number)
       || b.uniform_number.length - a.uniform_number.length
@@ -397,6 +407,11 @@ async function renderGamePage() {
     pitcherSearch.reset();
     updatePlayerFieldColors();
   }));
+  document.querySelectorAll('input[name="officialCall"]').forEach(input => input.addEventListener("change", () => {
+    fanCallInput.value = input.value === "strike" ? "ball" : "strike";
+    fanCallOutput.textContent = input.value === "strike" ? "ボール" : "ストライク";
+    fanCallOutput.classList.add("selected");
+  }));
   document.addEventListener("click", event => {
     if (!batterSearch.field.contains(event.target)) batterSearch.hide();
     if (!pitcherSearch.field.contains(event.target)) pitcherSearch.hide();
@@ -442,6 +457,20 @@ async function renderGamePage() {
     }
   }
 
+  function closeDetailPrompt(clearEvent = true) {
+    clearTimeout(detailPromptTimer);
+    absConfirmation.hidden = true;
+    absButton.hidden = false;
+    if (clearEvent) activeEventId = null;
+    updateAbsAvailability();
+  }
+
+  function showDetailPrompt() {
+    absButton.hidden = true;
+    absConfirmation.hidden = false;
+    detailPromptTimer = setTimeout(closeDetailPrompt, 10000);
+  }
+
   absButton.addEventListener("click", () => {
     const event = {
       id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -460,11 +489,19 @@ async function renderGamePage() {
     pendingSaves.set(event.id, save);
     save.finally(() => pendingSaves.delete(event.id));
     form.reset();
+    fanCallOutput.textContent = "実際の判定を選択";
+    fanCallOutput.classList.remove("selected");
     batterSearch.reset();
     pitcherSearch.reset();
     updatePlayerFieldColors();
+    showDetailPrompt();
+  });
+
+  document.querySelector("#open-details").addEventListener("click", () => {
+    closeDetailPrompt(false);
     dialog.showModal();
   });
+  document.querySelector("#skip-details").addEventListener("click", () => closeDetailPrompt());
 
   document.querySelector("#close-dialog").addEventListener("click", () => dialog.close());
 
@@ -481,6 +518,8 @@ async function renderGamePage() {
         pitcherId: pitcherSearch.getId(),
         pitcherName: pitcherSearch.getId() ? data.get("pitcherName") || "" : "",
         pitchNumber: data.get("pitchNumber") || "",
+        pitchCourse: data.get("pitchCourse") || "",
+        pitchHeight: data.get("pitchHeight") || "",
         officialCall: data.get("officialCall") || "",
         fanCall: data.get("fanCall") || ""
       };

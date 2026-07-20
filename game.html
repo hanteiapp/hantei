@@ -26,18 +26,19 @@
 
     <section id="game-view" hidden>
       <div class="match-card">
-        <div class="matchup">
-          <strong id="visitor-name"></strong>
-          <span>対</span>
-          <strong id="home-name"></strong>
+        <div class="match-info">
+          <div class="matchup">
+            <strong id="visitor-name"></strong>
+            <span>対</span>
+            <strong id="home-name"></strong>
+          </div>
+          <p id="game-time" class="match-time"></p>
+          <p id="game-umpire" class="match-umpire" hidden></p>
         </div>
-        <p id="game-time" class="match-time"></p>
-        <p id="game-umpire" class="match-umpire" hidden></p>
-      </div>
-
-      <div id="surge-notice" class="surge-notice" aria-live="polite" hidden>
-        <strong>ABS反応が急増しています</strong>
-        <span>この試合の判定に注目が集まっています</span>
+        <div id="surge-notice" class="surge-notice" aria-live="polite" hidden>
+          <strong>ABS反応が急増しています</strong>
+          <span>この試合の判定に注目が集まっています</span>
+        </div>
       </div>
 
       <div class="action-area">
@@ -47,6 +48,13 @@
             <strong>ファンABSチャレンジ</strong>
             <span>ボール・ストライク判定</span>
           </button>
+          <div id="abs-confirmation" class="abs-confirmation" aria-live="polite" hidden>
+            <p><strong>ファンABSチャレンジを送信しました。</strong><span>詳細を入力しますか？</span></p>
+            <div>
+              <button id="open-details" type="button">はい</button>
+              <button id="skip-details" type="button">いいえ</button>
+            </div>
+          </div>
           <button id="request-button" class="abs-button reaction-button" type="button" aria-describedby="abs-availability">
             <strong>ファンリクエスト</strong>
             <span>アウト／セーフ、フェア／ファウルなど</span>
@@ -79,9 +87,9 @@
         <button id="close-dialog" class="close-button" type="button" aria-label="詳細入力画面を閉じる">×</button>
       </div>
 
-      <fieldset class="offense-team">
-        <legend>攻撃チーム</legend>
-        <div class="offense-options">
+      <div class="detail-row">
+        <span id="offense-team-label" class="detail-label">攻撃チーム</span>
+        <div class="offense-options" role="group" aria-labelledby="offense-team-label">
           <label class="visitor-choice">
             <input id="offense-visitor" type="radio" name="offenseTeamCode">
             <span id="offense-visitor-name"></span>
@@ -91,49 +99,71 @@
             <span id="offense-home-name"></span>
           </label>
         </div>
-      </fieldset>
-
-      <label for="batter-name">打者名</label>
-      <div class="player-field">
-        <input id="batter-name" name="batterName" type="text" placeholder="選手名・背番号を入力" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="batter-suggestions" aria-expanded="false">
-        <button id="clear-batter" class="clear-player" type="button" aria-label="入力した打者名を消す" hidden>×</button>
-        <div id="batter-suggestions" class="player-suggestions" role="listbox" hidden></div>
       </div>
 
-      <label for="pitcher-name">投手名</label>
-      <div class="player-field">
-        <input id="pitcher-name" name="pitcherName" type="text" placeholder="選手名・背番号を入力" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="pitcher-suggestions" aria-expanded="false">
-        <button id="clear-pitcher" class="clear-player" type="button" aria-label="入力した投手名を消す" hidden>×</button>
-        <div id="pitcher-suggestions" class="player-suggestions" role="listbox" hidden></div>
+      <div class="detail-row">
+        <label for="batter-name">打者名</label>
+        <div class="player-field">
+          <input id="batter-name" name="batterName" type="text" placeholder="選手名・背番号を入力" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="batter-suggestions" aria-expanded="false">
+          <button id="clear-batter" class="clear-player" type="button" aria-label="入力した打者名を消す" hidden>×</button>
+          <div id="batter-suggestions" class="player-suggestions" role="listbox" hidden></div>
+        </div>
       </div>
 
-      <label for="pitch-number">何球目</label>
-      <select id="pitch-number" name="pitchNumber">
-        <option value="">選択してください</option>
-        <option value="1">1球目</option>
-        <option value="2">2球目</option>
-        <option value="3">3球目</option>
-        <option value="4">4球目</option>
-        <option value="5">5球目</option>
-        <option value="6">6球目</option>
-        <option value="7+">7球目以上</option>
-      </select>
+      <div class="detail-row">
+        <label for="pitcher-name">投手名</label>
+        <div class="player-field">
+          <input id="pitcher-name" name="pitcherName" type="text" placeholder="選手名・背番号を入力" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="pitcher-suggestions" aria-expanded="false">
+          <button id="clear-pitcher" class="clear-player" type="button" aria-label="入力した投手名を消す" hidden>×</button>
+          <div id="pitcher-suggestions" class="player-suggestions" role="listbox" hidden></div>
+        </div>
+      </div>
 
-      <fieldset>
-        <legend>実際の判定</legend>
-        <div class="choice-row">
+      <div class="detail-row">
+        <label for="pitch-number">何球目</label>
+        <select id="pitch-number" name="pitchNumber">
+          <option value="">選択してください</option>
+          <option value="1">1球目</option>
+          <option value="2">2球目</option>
+          <option value="3">3球目</option>
+          <option value="4">4球目</option>
+          <option value="5">5球目</option>
+          <option value="6">6球目</option>
+          <option value="7+">7球目以上</option>
+        </select>
+      </div>
+
+      <div class="detail-row">
+        <span id="pitch-course-label" class="detail-label">投球コース</span>
+        <div class="choice-row three-options" role="group" aria-labelledby="pitch-course-label">
+          <label><input type="radio" name="pitchCourse" value="inside"><span>内角</span></label>
+          <label><input type="radio" name="pitchCourse" value="middle"><span>中央</span></label>
+          <label><input type="radio" name="pitchCourse" value="outside"><span>外角</span></label>
+        </div>
+      </div>
+
+      <div class="detail-row">
+        <span id="pitch-height-label" class="detail-label">投球の高さ</span>
+        <div class="choice-row three-options" role="group" aria-labelledby="pitch-height-label">
+          <label><input type="radio" name="pitchHeight" value="high"><span>高め</span></label>
+          <label><input type="radio" name="pitchHeight" value="middle"><span>中央</span></label>
+          <label><input type="radio" name="pitchHeight" value="low"><span>低め</span></label>
+        </div>
+      </div>
+
+      <div class="detail-row">
+        <span id="official-call-label" class="detail-label">実際の判定</span>
+        <div class="choice-row" role="group" aria-labelledby="official-call-label">
           <label><input type="radio" name="officialCall" value="strike"><span>ストライク</span></label>
           <label><input type="radio" name="officialCall" value="ball"><span>ボール</span></label>
         </div>
-      </fieldset>
+      </div>
 
-      <fieldset>
-        <legend>自分が正しいと思う判定</legend>
-        <div class="choice-row">
-          <label><input type="radio" name="fanCall" value="strike"><span>ストライクだと思う</span></label>
-          <label><input type="radio" name="fanCall" value="ball"><span>ボールだと思う</span></label>
-        </div>
-      </fieldset>
+      <div class="detail-row">
+        <span id="fan-call-label" class="detail-label">正しいと思う判定</span>
+        <output id="fan-call-output" class="auto-call" aria-labelledby="fan-call-label">実際の判定を選択</output>
+        <input id="fan-call" name="fanCall" type="hidden">
+      </div>
 
       <button class="submit-button" type="submit">詳細を送信</button>
     </form>
