@@ -1,4 +1,6 @@
-import { next } from "@vercel/functions";
+declare const process: { env: Record<string, string | undefined> };
+
+const next = () => new Response(null, { headers: { "x-middleware-next": "1" } });
 
 export const config = { matcher: "/:path*" };
 
