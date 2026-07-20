@@ -57,6 +57,12 @@ function calculateAbsIndex(events) {
   return Math.min(events.filter(event => event.pressedAt >= cutoff).length * 20, 100);
 }
 
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, character => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+  })[character]);
+}
+
 function getSurgeHistory(events) {
   const sorted = [...events].sort((a, b) => a.pressedAt - b.pressedAt);
   return sorted.filter((event, index) => {
@@ -100,6 +106,12 @@ function getRemoteReactionState(gameId) {
     method: "POST",
     body: JSON.stringify({ p_game_id: gameId })
   });
+}
+
+function getPlayers(game) {
+  const season = Number(game.date.slice(0, 4));
+  const teams = `${game.visitorCode},${game.homeCode}`;
+  return supabaseRequest(`players?select=player_id,team_code,uniform_number,player_name,position&season=eq.${season}&active=eq.true&team_code=in.(${teams})&order=uniform_number.asc`);
 }
 
 function formatGame(game) {
@@ -239,11 +251,27 @@ async function renderGamePage() {
   if (!view) return;
 
   const gameId = new URLSearchParams(location.search).get("game");
+  const isDummyGame = gameId === "dummy";
   let game;
-  try {
-    const games = await supabaseRequest(`games?select=*&game_id=eq.${encodeURIComponent(gameId)}&limit=1`);
-    game = games[0] && formatGame(games[0]);
-  } catch {}
+  if (isDummyGame) {
+    game = {
+      ...formatGame({
+        game_id: "dummy",
+        game_date: todayInJapan(),
+        visitor_team: "g",
+        home_team: "s",
+        start_time: "00:00",
+        game_end: null,
+        home_plate_umpire: ""
+      }),
+      isDummy: true
+    };
+  } else {
+    try {
+      const games = await supabaseRequest(`games?select=*&game_id=eq.${encodeURIComponent(gameId)}&limit=1`);
+      game = games[0] && formatGame(games[0]);
+    } catch {}
+  }
   if (!game) {
     document.querySelector("#game-error").hidden = false;
     return;
@@ -255,23 +283,129 @@ async function renderGamePage() {
   document.querySelector("#visitor-name").textContent = game.visitorFull;
   document.querySelector("#home-name").textContent = game.homeFull;
   const gameDate = formatDate(game.date).replace("(", " (");
-  document.querySelector("#game-time").textContent = `${gameDate} ${game.cancelled ? "試合中止" : `${game.time}開始`}`;
+  document.querySelector("#game-time").textContent = `${gameDate} ${game.cancelled ? "試合中止" : `${game.time}開始`}${game.isDummy ? "（動作確認用）" : ""}`;
   const umpire = document.querySelector("#game-umpire");
   umpire.textContent = `球審：${game.umpire || ""}`;
   umpire.hidden = !game.umpire;
   view.hidden = false;
 
   const dialog = document.querySelector("#details-dialog");
+  dialog.classList.add(`visitor-${game.visitorCode}`, `home-${game.homeCode}`);
   const form = document.querySelector("#details-form");
   const absButton = document.querySelector("#abs-button");
+  const actionButtons = document.querySelectorAll(".reaction-button");
   const availability = document.querySelector("#abs-availability");
+  const offenseTeamInputs = document.querySelectorAll('input[name="offenseTeamCode"]');
+  const batterInput = document.querySelector("#batter-name");
+  const pitcherInput = document.querySelector("#pitcher-name");
+  let players = [];
   let activeEventId = null;
   const pendingSaves = new Map();
 
+  document.querySelector("#offense-visitor").value = game.visitorCode;
+  document.querySelector("#offense-home").value = game.homeCode;
+  document.querySelector("#offense-visitor-name").textContent = game.visitor;
+  document.querySelector("#offense-home-name").textContent = game.home;
+  getPlayers(game).then(data => {
+    players = data.sort((a, b) => Number(a.uniform_number) - Number(b.uniform_number)
+      || b.uniform_number.length - a.uniform_number.length
+      || a.player_name.localeCompare(b.player_name, "ja"));
+  }).catch(() => {});
+
+  function setupPlayerSearch(input, clearButton, suggestions, getTeamCode, positions) {
+    let selectedId = "";
+
+    function hide() {
+      suggestions.hidden = true;
+      input.setAttribute("aria-expanded", "false");
+    }
+
+    function show() {
+      const query = input.value.trim().toLowerCase();
+      const matches = players.filter(player => player.team_code === getTeamCode()
+        && positions.some(([position]) => position === player.position)
+        && (!query || player.player_name.toLowerCase().includes(query) || player.uniform_number.includes(query)));
+      suggestions.innerHTML = positions.map(([position, label]) => {
+        const group = matches.filter(player => player.position === position);
+        return group.length ? `<section><strong>${label}</strong>${group.map(player => `
+          <button type="button" role="option" data-player-id="${escapeHtml(player.player_id)}" data-player-name="${escapeHtml(player.player_name)}">
+            <span>${escapeHtml(player.uniform_number)}</span>${escapeHtml(player.player_name)}
+          </button>`).join("")}</section>` : "";
+      }).join("");
+      suggestions.hidden = !suggestions.innerHTML;
+      input.setAttribute("aria-expanded", String(!suggestions.hidden));
+    }
+
+    function reset() {
+      selectedId = "";
+      input.value = "";
+      clearButton.hidden = true;
+      hide();
+    }
+
+    input.addEventListener("focus", show);
+    input.addEventListener("input", () => {
+      selectedId = "";
+      clearButton.hidden = !input.value;
+      show();
+    });
+    clearButton.addEventListener("click", () => {
+      reset();
+      input.focus();
+      show();
+    });
+    suggestions.addEventListener("click", event => {
+      const button = event.target.closest("button[data-player-id]");
+      if (!button) return;
+      selectedId = button.dataset.playerId;
+      input.value = button.dataset.playerName;
+      clearButton.hidden = false;
+      hide();
+      input.focus();
+    });
+
+    return { getId: () => selectedId, hide, reset, show, field: input.parentElement };
+  }
+
+  const batterSearch = setupPlayerSearch(
+    batterInput,
+    document.querySelector("#clear-batter"),
+    document.querySelector("#batter-suggestions"),
+    () => form.elements.offenseTeamCode.value,
+    [["catcher", "捕手"], ["infielder", "内野手"], ["outfielder", "外野手"], ["pitcher", "投手"]]
+  );
+  const pitcherSearch = setupPlayerSearch(
+    pitcherInput,
+    document.querySelector("#clear-pitcher"),
+    document.querySelector("#pitcher-suggestions"),
+    () => form.elements.offenseTeamCode.value === game.visitorCode ? game.homeCode
+      : form.elements.offenseTeamCode.value === game.homeCode ? game.visitorCode : "",
+    [["pitcher", "投手"]]
+  );
+
+  function updatePlayerFieldColors() {
+    const offense = form.elements.offenseTeamCode.value;
+    const batterSide = offense === game.visitorCode ? "visitor" : offense === game.homeCode ? "home" : "";
+    const pitcherSide = batterSide === "visitor" ? "home" : batterSide === "home" ? "visitor" : "";
+    [batterSearch.field, pitcherSearch.field].forEach(field => field.classList.remove("tone-visitor", "tone-home"));
+    if (batterSide) batterSearch.field.classList.add(`tone-${batterSide}`);
+    if (pitcherSide) pitcherSearch.field.classList.add(`tone-${pitcherSide}`);
+  }
+
+  offenseTeamInputs.forEach(input => input.addEventListener("change", () => {
+    batterSearch.reset();
+    pitcherSearch.reset();
+    updatePlayerFieldColors();
+  }));
+  document.addEventListener("click", event => {
+    if (!batterSearch.field.contains(event.target)) batterSearch.hide();
+    if (!pitcherSearch.field.contains(event.target)) pitcherSearch.hide();
+  });
+
   function updateAbsAvailability() {
     const ended = game.end === "final";
-    const available = !ended && !game.cancelled && isAbsAvailable(game);
-    absButton.disabled = !available;
+    const available = game.isDummy || (!ended && !game.cancelled && isAbsAvailable(game));
+    actionButtons.forEach(button => { button.disabled = !available; });
     availability.textContent = game.cancelled
       ? "この試合は中止になりました。"
       : ended ? "この試合は終了しました。" : "試合開始後よりご利用いただけます。";
@@ -297,6 +431,10 @@ async function renderGamePage() {
   }
 
   async function updateReactionState() {
+    if (game.isDummy) {
+      renderReactionState(localReactionState());
+      return;
+    }
     try {
       renderReactionState(await getRemoteReactionState(gameId));
     } catch {
@@ -316,10 +454,15 @@ async function renderGamePage() {
     saveEvents(events);
     activeEventId = event.id;
     updateReactionState();
-    const save = saveAbsEvent(event).then(updateReactionState).catch(() => updateReactionState());
+    const save = game.isDummy
+      ? Promise.resolve()
+      : saveAbsEvent(event).then(updateReactionState).catch(() => updateReactionState());
     pendingSaves.set(event.id, save);
     save.finally(() => pendingSaves.delete(event.id));
     form.reset();
+    batterSearch.reset();
+    pitcherSearch.reset();
+    updatePlayerFieldColors();
     dialog.showModal();
   });
 
@@ -332,7 +475,11 @@ async function renderGamePage() {
     const target = events.find(item => item.id === activeEventId);
     if (target) {
       const details = {
-        batterName: data.get("batterName") || "",
+        offenseTeamCode: data.get("offenseTeamCode") || "",
+        batterId: batterSearch.getId(),
+        batterName: batterSearch.getId() ? data.get("batterName") || "" : "",
+        pitcherId: pitcherSearch.getId(),
+        pitcherName: pitcherSearch.getId() ? data.get("pitcherName") || "" : "",
         pitchNumber: data.get("pitchNumber") || "",
         officialCall: data.get("officialCall") || "",
         fanCall: data.get("fanCall") || ""
@@ -341,7 +488,7 @@ async function renderGamePage() {
       saveEvents(events);
       try {
         await pendingSaves.get(activeEventId);
-        await saveAbsDetails(activeEventId, details);
+        if (!game.isDummy) await saveAbsDetails(activeEventId, details);
       } catch {}
     }
     dialog.close();
