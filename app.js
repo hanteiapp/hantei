@@ -93,7 +93,11 @@ function saveAbsEvent(event) {
   return supabaseRequest("abs_events", {
     method: "POST",
     headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({ id: event.id, game_id: event.gameId, details: null })
+    body: JSON.stringify({
+      id: event.id,
+      game_id: event.gameId,
+      home_plate_umpire: event.homePlateUmpire || null
+    })
   });
 }
 
@@ -101,7 +105,18 @@ function saveAbsDetails(id, details) {
   return supabaseRequest(`abs_events?id=eq.${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({ details })
+    body: JSON.stringify({
+      offense_team_code: details.offenseTeamCode || null,
+      batter_id: details.batterId || null,
+      batter_name: details.batterName || null,
+      pitcher_id: details.pitcherId || null,
+      pitcher_name: details.pitcherName || null,
+      pitch_number: details.pitchNumber || null,
+      pitch_course: details.pitchCourse || null,
+      pitch_height: details.pitchHeight || null,
+      official_call: details.officialCall || null,
+      fan_call: details.fanCall || null
+    })
   });
 }
 
@@ -476,6 +491,7 @@ async function renderGamePage() {
       id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       gameId,
       pressedAt: Date.now(),
+      homePlateUmpire: game.umpire || null,
       details: null
     };
     const events = getEvents();
