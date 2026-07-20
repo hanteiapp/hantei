@@ -281,17 +281,25 @@ h1, h2, p { margin-top: 0; }
 }
 
 .reaction-history li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
   padding: 9px 0;
   border-top: 1px solid var(--line);
   font-size: .72rem;
 }
 
-.reaction-history time { color: var(--muted); }
-.reaction-history li span { color: #8c1820; font-weight: 800; }
+.reaction-history time { display: block; margin-bottom: 4px; color: var(--muted); }
+.reaction-history li span { color: #8c1820; font-weight: 800; line-height: 1.55; }
+.history-content { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+.reaction-history li a {
+  flex: none;
+  padding: 7px 9px;
+  color: white;
+  background: #111;
+  border-radius: 5px;
+  font-size: .66rem;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
 
 .action-area { padding: 22px 0 0; }
 .action-area > p { margin-bottom: 10px; color: var(--muted); font-size: .76rem; text-align: center; }
@@ -362,7 +370,16 @@ h1, h2, p { margin-top: 0; }
 }
 .offense-options .visitor-choice { --team-color: var(--visitor-color); }
 .offense-options .home-choice { --team-color: var(--home-color); }
-.offense-options input:checked + span { background: color-mix(in srgb, var(--team-color) 35%, white); box-shadow: inset 0 0 0 1px var(--team-color); }
+.offense-options input:not(:checked) + span {
+  opacity: .52;
+  background: #f3f4f6;
+  border-color: #aeb5c0;
+}
+.offense-options input:checked + span {
+  background: color-mix(in srgb, var(--team-color) 55%, white);
+  border-color: var(--team-color);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--team-color) 28%, transparent);
+}
 .offense-options input:focus-visible + span { outline: 3px solid #7aa7e3; outline-offset: 2px; }
 .clear-player {
   position: absolute;

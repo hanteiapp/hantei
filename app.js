@@ -1,4 +1,5 @@
 const storageKey = "hantei_abs_events";
+const absSurgeConfig = { windowSeconds: 120, threshold: 3 };
 const supabaseUrl = "https://aroguhvdhsjjucdprlra.supabase.co";
 const supabaseKey = "sb_publishable_snAMHKDq3HFEx2d68ch4Sw_zUPeniLq";
 const teamNames = {
@@ -67,11 +68,47 @@ function escapeHtml(value) {
   })[character]);
 }
 
-function getSurgeHistory(events) {
-  const sorted = [...events].sort((a, b) => a.pressedAt - b.pressedAt);
-  return sorted.filter((event, index) => {
-    const recent = sorted.slice(0, index).filter(item => item.pressedAt >= event.pressedAt - 60000);
-    return recent.length === 2;
+function formatPitchLocation(course, height) {
+  if (course === "middle" && height === "middle") return "ど真ん中";
+  const courseLabel = { inside: "内角", middle: "真ん中", outside: "外角" }[course] || "";
+  const heightLabel = { high: "高め", middle: "", low: "低め" }[height] || "";
+  return `${courseLabel}${heightLabel}`;
+}
+
+function getSurgeHistory(events, game) {
+  const windowMs = absSurgeConfig.windowSeconds * 1000;
+  const sorted = events.filter(event => {
+    const details = event.details;
+    return details?.pitcherName && details?.batterName && details?.officialCall;
+  }).sort((a, b) => a.pressedAt - b.pressedAt);
+
+  return sorted.flatMap((event, index) => {
+    const details = event.details;
+    const pitcherKey = details.pitcherId || details.pitcherName;
+    const batterKey = details.batterId || details.batterName;
+    const matching = sorted.slice(0, index + 1).filter(candidate => {
+      const candidateDetails = candidate.details;
+      return candidate.pressedAt >= event.pressedAt - windowMs
+        && (candidateDetails.pitcherId || candidateDetails.pitcherName) === pitcherKey
+        && (candidateDetails.batterId || candidateDetails.batterName) === batterKey
+        && candidateDetails.officialCall === details.officialCall;
+    });
+    if (matching.length !== absSurgeConfig.threshold) return [];
+
+    const sameLocation = details.pitchCourse && details.pitchHeight && matching.every(candidate =>
+      candidate.details.pitchCourse === details.pitchCourse
+      && candidate.details.pitchHeight === details.pitchHeight);
+    const location = sameLocation ? formatPitchLocation(details.pitchCourse, details.pitchHeight) : "";
+    const call = details.officialCall === "strike" ? "ストライク" : "ボール";
+    const batterTeam = teamShortNames[details.offenseTeamCode] || "";
+    const pitcherCode = details.offenseTeamCode === game.visitorCode ? game.homeCode
+      : details.offenseTeamCode === game.homeCode ? game.visitorCode : "";
+    const pitcherTeam = teamShortNames[pitcherCode] || "";
+    return [{
+      startedAt: matching[0].pressedAt,
+      triggeredAt: event.pressedAt,
+      message: `${pitcherTeam ? `${pitcherTeam}・` : ""}${details.pitcherName}投手が${batterTeam ? `${batterTeam}・` : ""}${details.batterName}選手に投げた${location ? `${location}の` : ""}${call}判定にファンABSチャレンジが急増！`
+    }];
   });
 }
 
@@ -130,7 +167,11 @@ function getRemoteReactionState(gameId) {
 function getPlayers(game) {
   const season = Number(game.date.slice(0, 4));
   const teams = `${game.visitorCode},${game.homeCode}`;
-  return supabaseRequest(`players?select=player_id,team_code,uniform_number,player_name,position&season=eq.${season}&active=eq.true&team_code=in.(${teams})&order=uniform_number.asc`);
+  return supabaseRequest(`players?select=player_id,team_code,uniform_number,player_name,registered_name,position&season=eq.${season}&active=eq.true&team_code=in.(${teams})&order=uniform_number.asc`);
+}
+
+function getPlayerDisplayName(player) {
+  return player.registered_name?.trim() || player.player_name;
 }
 
 function formatGame(game) {
@@ -334,7 +375,7 @@ async function renderGamePage() {
   getPlayers(game).then(data => {
     players = data.sort((a, b) => Number(a.uniform_number) - Number(b.uniform_number)
       || b.uniform_number.length - a.uniform_number.length
-      || a.player_name.localeCompare(b.player_name, "ja"));
+      || getPlayerDisplayName(a).localeCompare(getPlayerDisplayName(b), "ja"));
   }).catch(() => {});
 
   function setupPlayerSearch(input, clearButton, suggestions, getTeamCode, positions) {
@@ -349,13 +390,17 @@ async function renderGamePage() {
       const query = input.value.trim().toLowerCase();
       const matches = players.filter(player => player.team_code === getTeamCode()
         && positions.some(([position]) => position === player.position)
-        && (!query || player.player_name.toLowerCase().includes(query) || player.uniform_number.includes(query)));
+        && (!query || getPlayerDisplayName(player).toLowerCase().includes(query)
+          || player.player_name.toLowerCase().includes(query) || player.uniform_number.includes(query)));
       suggestions.innerHTML = positions.map(([position, label]) => {
         const group = matches.filter(player => player.position === position);
-        return group.length ? `<section><strong>${label}</strong>${group.map(player => `
-          <button type="button" role="option" data-player-id="${escapeHtml(player.player_id)}" data-player-name="${escapeHtml(player.player_name)}">
-            <span>${escapeHtml(player.uniform_number)}</span>${escapeHtml(player.player_name)}
-          </button>`).join("")}</section>` : "";
+        return group.length ? `<section><strong>${label}</strong>${group.map(player => {
+          const name = getPlayerDisplayName(player);
+          return `
+          <button type="button" role="option" data-player-id="${escapeHtml(player.player_id)}" data-player-name="${escapeHtml(name)}">
+            <span>${escapeHtml(player.uniform_number)}</span>${escapeHtml(name)}
+          </button>`;
+        }).join("")}</section>` : "";
       }).join("");
       suggestions.hidden = !suggestions.innerHTML;
       input.setAttribute("aria-expanded", String(!suggestions.hidden));
@@ -444,18 +489,32 @@ async function renderGamePage() {
 
   function localReactionState() {
     const events = getEvents().filter(event => event.gameId === gameId);
+    const history = getSurgeHistory(events, game).slice(-5).reverse();
+    const currentSurge = history.find(item =>
+      item.triggeredAt >= Date.now() - absSurgeConfig.windowSeconds * 1000) || null;
     return {
-      isSurging: calculateAbsIndex(events) >= 60,
-      history: getSurgeHistory(events).slice(-5).reverse()
+      isSurging: Boolean(currentSurge),
+      currentSurge,
+      history
     };
   }
 
   function renderReactionState(state) {
-    document.querySelector("#surge-notice").hidden = !state.isSurging;
+    const notice = document.querySelector("#surge-notice");
+    const currentSurge = state.currentSurge || null;
+    const message = currentSurge?.message || "ファンABSチャレンジが急増！";
+    notice.hidden = !state.isSurging;
+    notice.querySelector("strong").textContent = message;
+    notice.querySelector("span").textContent = `${absSurgeConfig.windowSeconds / 60}分間に${absSurgeConfig.threshold}件の反応が集まりました`;
     const list = document.querySelector("#surge-history");
-    list.innerHTML = state.history.map(event => `
-      <li><time datetime="${new Date(event.pressedAt).toISOString()}">${new Date(event.pressedAt).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time><span>ABS反応が急増</span></li>
-    `).join("");
+    list.innerHTML = state.history.map(event => {
+      const historyMessage = event.message || "ファンABSチャレンジが急増！";
+      const shareUrl = `https://x.com/intent/post?text=${encodeURIComponent(`${historyMessage}\n${location.href}\n#みんなのABS`)}`;
+      return `<li>
+        <time datetime="${new Date(event.startedAt || event.pressedAt).toISOString()}">${new Date(event.startedAt || event.pressedAt).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time>
+        <div class="history-content"><span>${escapeHtml(historyMessage)}</span><a href="${shareUrl}" target="_blank" rel="noopener noreferrer" aria-label="このABS指数をXに投稿">Xに投稿</a></div>
+      </li>`;
+    }).join("");
     list.hidden = state.history.length === 0;
     document.querySelector("#history-empty").hidden = state.history.length > 0;
   }
@@ -545,6 +604,7 @@ async function renderGamePage() {
         await pendingSaves.get(activeEventId);
         if (!game.isDummy) await saveAbsDetails(activeEventId, details);
       } catch {}
+      updateReactionState();
     }
     dialog.close();
   });
